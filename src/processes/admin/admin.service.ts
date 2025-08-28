@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
-import { UserResponseDto } from '../../interfaces/user.interface';
+import { UserResponseDto } from './dto/user.response.dto';
 import * as admin from 'firebase-admin';
 
 @Injectable()

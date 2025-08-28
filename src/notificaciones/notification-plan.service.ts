@@ -1,6 +1,7 @@
+import { FirebaseService } from '@firebase/firebase.service';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
-import { NotificationPlanDto } from '../dto/notification-plan.dto';
+import { NotificationPlanDto } from 'src/processes/admin/dto/notification-plan.dto';
+
 
 @Injectable()
 export class NotificationPlanService {
@@ -79,6 +80,27 @@ export class NotificationPlanService {
       };
     } catch (error) {
       this.logger.error('Error updating plan status:', error);
+      throw error;
+    }
+  }
+
+  async deleteNotificationPlan(id: string) {
+    try {
+      const db = this.firebaseService.getFirestore();
+      const planRef = db.collection('notificationPlans').doc(id);
+
+      // Verificar que el plan existe
+      const doc = await planRef.get();
+      if (!doc.exists) {
+        throw new NotFoundException('Plan no encontrado');
+      }
+
+      // Eliminar el plan
+      await planRef.delete();
+
+      this.logger.log(`Notification plan deleted: ${id}`);
+    } catch (error) {
+      this.logger.error('Error deleting notification plan:', error);
       throw error;
     }
   }

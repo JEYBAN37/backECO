@@ -50,4 +50,5 @@ export interface Activity extends CreateActivityDto {
   id: string;
   createdAt: string;
   updatedAt: string;
+  duration: number;
 }

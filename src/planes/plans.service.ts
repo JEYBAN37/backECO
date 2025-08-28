@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
-import { CreatePlanDto, Plan } from '../dto/plan.dto';
+import { FirebaseService } from '../firebase/firebase.service';
+import { CreatePlanDto, Plan } from '../processes/admin/dto/plan.dto';
 
 @Injectable()
 export class PlansService {
@@ -117,6 +117,31 @@ export class PlansService {
       } as Plan;
     } catch (error) {
       this.logger.error('Error actualizando plan:', error);
+      throw error;
+    }
+  }
+
+  async deletePlan(id: string): Promise<void> {
+    try {
+      this.logger.debug('Eliminando plan:', id);
+      const db = this.firebaseService.getFirestore();
+      const planRef = db.collection('plans').doc(id);
+      await planRef.delete();
+    } catch (error) {
+      this.logger.error('Error eliminando plan:', error);
+      throw error;
+    }
+  }
+
+
+  async PausedPlans( response : any){
+    try {
+      this.logger.debug('Pausando plan:', response.id);
+      const db = this.firebaseService.getFirestore();
+      const planRef = db.collection('plans').doc(response.id);
+      await planRef.update({ status: 'paused' });
+    } catch (error) {
+      this.logger.error('Error pausando plan:', error);
       throw error;
     }
   }

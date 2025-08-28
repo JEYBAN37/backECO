@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
 
@@ -8,7 +13,7 @@ export class FirebaseService implements OnModuleInit {
   private auth!: admin.auth.Auth;
   private db!: admin.firestore.Firestore;
 
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   private formatPrivateKey(key: string): string {
     // Convierte saltos de línea escapados en reales y remueve espacios extra
@@ -17,39 +22,36 @@ export class FirebaseService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      this.logger.log('🔄 Inicializando Firebase...');
+      this.logger.log('🔄 Inicializando Firebase con variables separadas...');
 
-      const base64Config = this.configService.get<string>('FIREBASE_CONFIG_BASE64');
-      if (!base64Config) {
-        throw new Error('FIREBASE_CONFIG_BASE64 no está definido');
+      const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+      const clientEmail = this.configService.get<string>(
+        'FIREBASE_CLIENT_EMAIL',
+      );
+      let privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
+
+      if (!projectId || !clientEmail || !privateKey) {
+        throw new Error('❌ Faltan variables de entorno de Firebase');
       }
 
-      const jsonConfigString = Buffer.from(base64Config, 'base64').toString('utf8');
-      const parsedConfig = JSON.parse(jsonConfigString);
-
-      // Formateamos y limpiamos la clave privada
-      parsedConfig.private_key = this.formatPrivateKey(parsedConfig.private_key);
-      this.logger.debug(`Longitud de clave privada: ${parsedConfig.private_key.length}`);
-
-      // Validamos el formato PEM
-      if (!parsedConfig.private_key.startsWith('-----BEGIN PRIVATE KEY-----')) {
-        throw new Error('❌ Clave privada inválida o mal formateada');
-      }
+      // Arreglar el formato de la clave (las claves suelen venir con \n en una sola línea)
+      privateKey = privateKey.replace(/\\n/g, '\n');
 
       const serviceAccount: admin.ServiceAccount = {
-        projectId: parsedConfig.project_id,
-        clientEmail: parsedConfig.client_email,
-        privateKey: parsedConfig.private_key,
+        projectId,
+        clientEmail,
+        privateKey,
       };
 
-      // Inicializamos Firebase solo una vez
       if (!admin.apps.length) {
         const app = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
         });
         this.auth = app.auth();
         this.db = app.firestore();
-        this.logger.log('✅ Firebase inicializado correctamente');
+        this.logger.log(
+          '✅ Firebase inicializado correctamente con variables separadas',
+        );
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -75,7 +77,9 @@ export class FirebaseService implements OnModuleInit {
     return this.db;
   }
 
-  async verifyToken(token: string): Promise<{ uid: string; email: string; role: string }> {
+  async verifyToken(
+    token: string,
+  ): Promise<{ uid: string; email: string; role: string }> {
     try {
       if (!token || !token.startsWith('Bearer ')) {
         throw new UnauthorizedException('Token inválido');
@@ -89,7 +93,10 @@ export class FirebaseService implements OnModuleInit {
       return {
         uid: decodedToken.uid,
         email: decodedToken.email,
-        role: decodedToken.email === this.configService.get('ADMIN_EMAIL') ? 'admin' : 'user',
+        role:
+          decodedToken.email === this.configService.get('ADMIN_EMAIL')
+            ? 'admin'
+            : 'user',
       };
     } catch (error) {
       if (error instanceof Error) {

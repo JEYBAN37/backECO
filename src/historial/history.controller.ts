@@ -1,6 +1,17 @@
-import { Controller, Get, Query, Post, UseGuards, Logger, HttpException, HttpStatus, Req, UnauthorizedException } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
-import { HistoryService } from '../services_admin/history.service';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  UseGuards,
+  Logger,
+  HttpException,
+  HttpStatus,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { FirebaseAuthGuard } from '../processes/auth/guards/firebase-auth.guard';
+import { HistoryService } from './history.service';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 
@@ -36,27 +47,35 @@ export class HistoryController {
 
       const history = await this.historyService.getPauseHistory(
         new Date(startDate),
-        new Date(endDate)
+        new Date(endDate),
       );
 
       return {
         status: true,
         message: 'Historial obtenido correctamente',
         data: history,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error: unknown) {
       this.logger.error('Error getting history:', error);
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error desconocido',
-        error: 'HISTORY_FETCH_ERROR'
-      }, error instanceof UnauthorizedException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message: error instanceof Error ? error.message : 'Error desconocido',
+          error: 'HISTORY_FETCH_ERROR',
+        },
+        error instanceof UnauthorizedException
+          ? HttpStatus.UNAUTHORIZED
+          : HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Post('export')
-  @ApiResponse({ status: 200, description: 'Historial exportado correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Historial exportado correctamente',
+  })
   async exportHistory(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -78,7 +97,10 @@ export class HistoryController {
       throw new HttpException(
         {
           status: false,
-          message: error instanceof Error ? error.message : 'Error exportando historial',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Error exportando historial',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );

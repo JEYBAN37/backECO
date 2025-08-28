@@ -14,8 +14,3 @@ export interface UserResponseDto {
     status?: string;
 }
 
-export interface FirestoreDoc {
-    id: string;
-    exists: boolean;
-    data(): any;
-}

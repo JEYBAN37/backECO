@@ -1,29 +1,23 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { UserModule } from './processes/user/user.module';
-import { AuthModule } from './processes/auth/auth.module';
-import { FirebaseModule } from './firebase/firebase.module';
-import { AdminModule } from './processes/admin/admin.module';
-import { HealthController } from './controllers/health.controller';
-import { HealthAppController } from './controllers/health-app.controller';
-import { NetworkInfoController } from './controllers/network-info.controller';
-import { DriveService } from './services/drive.service';
+import { ActivitiesModule } from './actividades/activities.module';
+import { DriveModule } from './drive_storage/driver.module';
+import { HistoryModule } from './historial/history.module';
+import { NotificationPlanModule } from './notificaciones/notification-plan.module';
+import { PlansModule } from './planes/plans.module';
+import { FirebaseModule } from '@firebase/firebase.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    AdminModule,
     FirebaseModule,
-    UserModule,
-    AuthModule,
+    ActivitiesModule,
+    DriveModule,
+    HistoryModule,
+    NotificationPlanModule,
+    PlansModule,
   ],
-  controllers: [
-    HealthController,
-    HealthAppController,
-    NetworkInfoController
-  ],
-  providers: [
-    DriveService,
-  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule { }

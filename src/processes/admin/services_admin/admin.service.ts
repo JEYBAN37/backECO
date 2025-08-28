@@ -4,7 +4,7 @@ import { FirebaseService } from '../../../firebase/firebase.service';
 import { UserResponseDto } from '../dto/user-response.dto';
 import { UserStats } from '../dto/user-stats.dto';
 import { CreateActivityDto, Activity } from '../dto/activity.dto';
-import { DriveService } from '../../../services/drive.service';
+import { DriveService } from '../../../drive_storage/drive.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -160,83 +160,5 @@ export class AdminService {
     }
   }
 
-  async createActivity(createActivityDto: CreateActivityDto): Promise<Activity> {
-    try {
-      this.logger.debug('Creando nueva actividad:', createActivityDto);
 
-      const db = this.firebaseService.getFirestore();
-      const activitiesRef = db.collection('activities');
-
-      // Extract the file ID from the video URL
-      const driveFileId = DriveService.extractFileId(createActivityDto.videoUrl);
-
-      // If driveFileId is null, it means the URL is invalid
-      if (!driveFileId) {
-        throw new HttpException({
-          status: false,
-          message: 'Invalid video URL',
-          error: 'INVALID_VIDEO_URL',
-        }, HttpStatus.BAD_REQUEST);
-      }
-
-      const now = new Date().toISOString();
-      const activityData = {
-        ...createActivityDto,
-        createdAt: now,
-        updatedAt: now,
-        driveFileId: driveFileId, // Store the extracted file ID
-      };
-
-      const docRef = await activitiesRef.add(activityData);
-
-      return {
-        id: docRef.id,
-        ...activityData,
-      } as Activity;
-    } catch (error) {
-      this.logger.error('Error creando actividad:', error);
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error creando actividad',
-        error: 'ACTIVITY_CREATE_ERROR',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async deleteActivity(activityId: string): Promise<void> {
-    try {
-      this.logger.debug(`Eliminando actividad: ${activityId}`);
-
-      const db = this.firebaseService.getFirestore();
-      const activityRef = db.collection('activities').doc(activityId);
-
-      const doc = await activityRef.get();
-      if (!doc.exists) {
-        throw new NotFoundException('Actividad no encontrada');
-      }
-
-      await activityRef.delete();
-      this.logger.debug('Actividad eliminada exitosamente');
-
-    } catch (error) {
-      this.logger.error('Error eliminando actividad:', error);
-      throw error;
-    }
-  }
-
-  async getActivities(): Promise<Activity[]> {
-    try {
-      const db = this.firebaseService.getFirestore();
-      const snapshot = await db.collection('activities').get();
-
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Activity));
-
-    } catch (error) {
-      this.logger.error('Error obteniendo actividades:', error);
-      throw new Error('Error al obtener actividades');
-    }
-  }
 }

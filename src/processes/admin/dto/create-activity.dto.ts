@@ -69,4 +69,10 @@ export class CreateActivityDto {
   @IsNotEmpty()
   @IsNumber()
   duration!: number;
+  
+  @ApiProperty({ description: 'ID del archivo en Drive', required: false })
+  @IsString()
+  @IsOptional()
+  driveFileId?: string;
+
 }

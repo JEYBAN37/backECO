@@ -1,7 +1,19 @@
-import { Controller, Post, Get, Put, Body, Param, UseGuards, Logger, HttpException, HttpStatus, Req } from '@nestjs/common';
-import { CreatePlanDto } from '../dto/plan.dto';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
-import { PlansService } from '../services_admin/plans.service';  // Updated import path
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+  Logger,
+  HttpException,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
+import { CreatePlanDto } from '../processes/admin/dto/plan.dto';
+import { FirebaseAuthGuard } from '../processes/auth/guards/firebase-auth.guard';
+import { PlansService } from './plans.service'; // Updated import path
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 
@@ -13,7 +25,7 @@ export class PlansController {
 
   constructor(private readonly plansService: PlansService) {}
 
-  @Post()  // Change from 'create' to just @Post()
+  @Post() // Change from 'create' to just @Post()
   @ApiResponse({ status: 201, description: 'Plan creado correctamente' })
   async createPlan(@Body() createPlanDto: CreatePlanDto) {
     try {
@@ -30,7 +42,8 @@ export class PlansController {
       throw new HttpException(
         {
           status: false,
-          message: error instanceof Error ? error.message : 'Error creando plan',
+          message:
+            error instanceof Error ? error.message : 'Error creando plan',
           error: 'PLAN_CREATE_ERROR',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -39,7 +52,10 @@ export class PlansController {
   }
 
   @Get()
-  @ApiResponse({ status: 200, description: 'Lista de planes obtenida correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de planes obtenida correctamente',
+  })
   async getPlans(@Req() request: Request) {
     try {
       this.logger.debug(`📋 Getting plans for user: ${request.user?.email}`);
@@ -55,7 +71,8 @@ export class PlansController {
       throw new HttpException(
         {
           status: false,
-          message: error instanceof Error ? error.message : 'Error obteniendo planes',
+          message:
+            error instanceof Error ? error.message : 'Error obteniendo planes',
           error: 'PLANS_FETCH_ERROR',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -67,7 +84,7 @@ export class PlansController {
   @ApiResponse({ status: 200, description: 'Plan actualizado correctamente' })
   async updatePlan(
     @Param('id') id: string,
-    @Body() updatePlanDto: CreatePlanDto
+    @Body() updatePlanDto: CreatePlanDto,
   ) {
     try {
       this.logger.log(`📝 Actualizando plan: ${id}`);
@@ -83,7 +100,32 @@ export class PlansController {
       throw new HttpException(
         {
           status: false,
-          message: error instanceof Error ? error.message : 'Error actualizando plan',
+          message:
+            error instanceof Error ? error.message : 'Error actualizando plan',
+          error: 'PLAN_UPDATE_ERROR',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('pause-plans')
+  async PausedPlans(response: any) {
+    try {
+      this.logger.log(`📝 Pausando plan: ${response.id}`);
+      const plan = await this.plansService.PausedPlans(response);
+      return {
+        status: true,
+        message: 'Plan pausado exitosamente',
+        data: plan,
+      };
+    } catch (error) {
+      this.logger.error('Error pausando plan:', error);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error pausando plan',
           error: 'PLAN_UPDATE_ERROR',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
