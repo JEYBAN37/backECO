@@ -104,4 +104,35 @@ export class NotificationPlanService {
       throw error;
     }
   }
+
+  async cleanExpiredPlans(): Promise<void> {
+    try {
+      const db = this.firebaseService.getFirestore();
+      const now = new Date();
+
+      // Obtener todos los planes
+      const snapshot = await db.collection('notificationPlans').get();
+      const batch = db.batch();
+      let deletedCount = 0;
+
+      for (const doc of snapshot.docs) {
+        const plan = doc.data();
+        const endDate = new Date(plan.endDate);
+
+        // Si la fecha final ya pasó, eliminar el plan
+        if (endDate < now) {
+          batch.delete(doc.ref);
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        await batch.commit();
+        this.logger.log(`✅ ${deletedCount} planes expirados eliminados`);
+      }
+    } catch (error) {
+      this.logger.error('❌ Error limpiando planes expirados:', error);
+      throw error;
+    }
+  }
 }
