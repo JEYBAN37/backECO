@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { ProcessUploadDto } from '../dto/process-upload.dto';
-import { Process } from '../interfaces/process.interface';
+import { Process } from './process.interface';
 import * as admin from 'firebase-admin';
 
 @Injectable()

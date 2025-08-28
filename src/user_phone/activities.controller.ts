@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards, Logger, HttpException, HttpStatus, Req, UnauthorizedException } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
-import { SyncService } from '../../../services/sync.service';
 import { Request } from 'express';
+import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
+import { SyncService } from 'src/procesos_cargados/process-sync.service';
 
 interface AssignedProcess {
   id: string;
@@ -12,7 +12,7 @@ interface AssignedProcess {
 }
 
 @Controller('user/activities')
-@UseGuards(FirebaseAuthGuard) // Asegura que todas las rutas requieren autenticación
+@UseGuards(AdminAuthGuard) // Asegura que todas las rutas requieren autenticación
 export class UserActivitiesController {
   private readonly logger = new Logger(UserActivitiesController.name);
 

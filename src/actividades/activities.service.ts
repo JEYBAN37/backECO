@@ -6,8 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DriveService } from 'src/drive_storage/drive.service';
-import { Activity } from 'src/processes/admin/dto/activity.dto';
-import { CreateActivityDto } from 'src/processes/admin/dto/create-activity.dto';
+import { Activity } from 'src/dto/activity.dto';
+import { CreateActivityDto } from 'src/dto/create-activity.dto';
 
 
 @Injectable()

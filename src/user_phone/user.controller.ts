@@ -10,15 +10,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { UserService } from '../services/user.service';
+import { UserService } from './user.service';
 import { UpdateStatsDto } from '../dto/update-stats.dto';
+import { FirebaseService } from '@firebase/firebase.service';
 import { UpdateNotificationSettingsDto } from '../dto/update-notification-settings.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { FirebaseService } from '../../../firebase/firebase.service';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
+import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @Controller('user')
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AdminAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
 

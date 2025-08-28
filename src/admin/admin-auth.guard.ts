@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
+import { FirebaseService } from '../firebase/firebase.service';
 
 interface DecodedTokenWithEmail {
     uid: string;

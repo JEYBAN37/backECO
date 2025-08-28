@@ -1,6 +1,6 @@
 import { FirebaseService } from '@firebase/firebase.service';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { NotificationPlanDto } from 'src/processes/admin/dto/notification-plan.dto';
+import { NotificationPlanDto } from 'src/dto/notification-plan.dto';
 
 
 @Injectable()

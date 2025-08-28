@@ -6,6 +6,10 @@ import { HistoryModule } from './historial/history.module';
 import { NotificationPlanModule } from './notificaciones/notification-plan.module';
 import { PlansModule } from './planes/plans.module';
 import { FirebaseModule } from '@firebase/firebase.module';
+import { ProcessGroupModule } from './procesos/process-group.module';
+import { AdminModule } from './admin/admin.module';
+import { ProcessUploadModule } from './procesos_cargados/process-upload.module';
+import { UserModule } from './user_phone/user.module';
 
 @Module({
   imports: [
@@ -16,6 +20,10 @@ import { FirebaseModule } from '@firebase/firebase.module';
     HistoryModule,
     NotificationPlanModule,
     PlansModule,
+    ProcessGroupModule,
+    ProcessUploadModule,
+    AdminModule,
+    UserModule
   ],
   controllers: [],
   providers: [],

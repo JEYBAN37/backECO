@@ -11,8 +11,8 @@ import {
   HttpException,
   HttpStatus 
 } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
-import { ProcessGroupService } from '../services_admin/process-group.service';
+import { AdminAuthGuard } from '../admin/admin-auth.guard';
+import { ProcessGroupService } from './process-group.service';
 import { 
   CreateProcessGroupDto, 
   UpdateProcessGroupDto, 
@@ -22,7 +22,7 @@ import { ApiTags, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Process Groups')
 @Controller('admin/process-groups')
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AdminAuthGuard)
 export class ProcessGroupsController {
   private readonly logger = new Logger(ProcessGroupsController.name);
 

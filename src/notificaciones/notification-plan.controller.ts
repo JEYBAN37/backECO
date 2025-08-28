@@ -5,22 +5,20 @@ import {
   Put,
   Body,
   Param,
-  UseGuards,
   Logger,
   HttpException,
   HttpStatus,
   Req,
   Delete,
 } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../processes/auth/guards/firebase-auth.guard';
-import { NotificationPlanDto } from '../processes/admin/dto/notification-plan.dto';
+
+import { NotificationPlanDto } from '../dto/notification-plan.dto';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { NotificationPlanService } from './notification-plan.service';
 
 @ApiTags('Notification Plans')
 @Controller('admin/notification-plans')
-@UseGuards(FirebaseAuthGuard)
 export class NotificationPlanController {
   private readonly logger = new Logger(NotificationPlanController.name);
 

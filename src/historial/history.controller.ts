@@ -10,14 +10,14 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../processes/auth/guards/firebase-auth.guard';
 import { HistoryService } from './history.service';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
+import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @ApiTags('History')
 @Controller('admin/pause-history')
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AdminAuthGuard)
 export class HistoryController {
   private readonly logger = new Logger(HistoryController.name);
 

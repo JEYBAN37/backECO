@@ -13,17 +13,11 @@ export class FirebaseService implements OnModuleInit {
   private auth!: admin.auth.Auth;
   private db!: admin.firestore.Firestore;
 
-  constructor(private configService: ConfigService) {}
-
-  private formatPrivateKey(key: string): string {
-    // Convierte saltos de línea escapados en reales y remueve espacios extra
-    return key.replace(/\\n/g, '\n').trim();
-  }
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
     try {
       this.logger.log('🔄 Inicializando Firebase con variables separadas...');
-
       const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
       const clientEmail = this.configService.get<string>(
         'FIREBASE_CLIENT_EMAIL',

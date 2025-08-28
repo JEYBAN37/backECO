@@ -1,13 +1,14 @@
 import { Controller, Post, Get, Param, Body, UseGuards, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
-import { ProcessUploadService } from '../services_admin/process-upload.service';
-import { ProcessUploadDto } from '../dto/process-upload.dto';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { SyncService } from '../../../services/sync.service';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { SyncService } from 'src/procesos_cargados/process-sync.service';
+import { ProcessUploadDto } from 'src/dto/process-upload.dto';
+import { ProcessUploadService } from 'src/procesos_cargados/process-upload.service';
+import { AdminAuthGuard } from '../admin/admin-auth.guard';
+
 
 @ApiTags('Process Upload')
 @Controller('admin/process-upload')
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AdminAuthGuard)
 export class ProcessUploadController {
   private readonly logger = new Logger(ProcessUploadController.name);
 
@@ -40,7 +41,7 @@ export class ProcessUploadController {
     }
   }
 
-  @Get('active')
+  @Get('/active')
   @ApiResponse({ status: 200, description: 'Lista de procesos activos obtenida' })
   async getActiveProcesses() {
     try {
@@ -60,7 +61,7 @@ export class ProcessUploadController {
     }
   }
 
-  @Post(':id/deactivate')
+  @Post('/:id/deactivate')
   @ApiResponse({ status: 200, description: 'Proceso desactivado exitosamente' })
   async deactivateProcess(@Param('id') id: string) {
     try {

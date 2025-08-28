@@ -1,8 +1,9 @@
+import { FirebaseService } from '@firebase/firebase.service';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
 import { UpdateStatsDto } from '../dto/update-stats.dto';
 import { UpdateNotificationSettingsDto } from '../dto/update-notification-settings.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
+
 
 @Injectable()
 export class UserService {

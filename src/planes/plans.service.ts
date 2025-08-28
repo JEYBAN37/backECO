@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
-import { CreatePlanDto, Plan } from '../processes/admin/dto/plan.dto';
+import { CreatePlanDto, Plan } from '../dto/plan.dto';
 
 @Injectable()
 export class PlansService {

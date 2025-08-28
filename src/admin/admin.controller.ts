@@ -1,10 +1,10 @@
-import { Controller, Post, Body, Get, UseGuards, Logger, HttpStatus, HttpException, Param, Delete, Res, Req } from '@nestjs/common';
-import { AdminService } from './services_admin/admin.service';
-import { AdminLoginDto } from './dto/admin-login.dto';
-import { FirebaseAuthGuard } from '../auth/guards/firebase-auth.guard';
+import { Controller, Post, Body, Get, UseGuards, Logger, HttpStatus, HttpException, Req } from '@nestjs/common';
+
+import { AdminLoginDto } from '../dto/admin-login.dto';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { DriveService } from '../../drive_storage/drive.service';
 import { Request } from 'express';
+import { AdminService } from './admin.service';
+import { AdminAuthGuard } from './admin-auth.guard';
 
 interface AdminError {
   message?: string;
@@ -18,9 +18,7 @@ export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
   constructor(
-    private readonly adminService: AdminService,
-    private readonly driveService: DriveService, // Inject DriveService
-  ) { }
+    private readonly adminService: AdminService) { }
 
   @UseGuards() // Disable guards for this route
   @Post('login')
@@ -46,7 +44,7 @@ export class AdminController {
   }
 
   @Get()
-  @UseGuards(FirebaseAuthGuard) // Add guard explicitly here
+  @UseGuards(AdminAuthGuard) // Add guard explicitly here
   async validateAdminAccess() {
     return {
       status: true,

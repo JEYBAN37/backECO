@@ -11,15 +11,15 @@ import {
   HttpStatus,
   Req,
 } from '@nestjs/common';
-import { CreatePlanDto } from '../processes/admin/dto/plan.dto';
-import { FirebaseAuthGuard } from '../processes/auth/guards/firebase-auth.guard';
+import { CreatePlanDto } from '../dto/plan.dto';
 import { PlansService } from './plans.service'; // Updated import path
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
+import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @ApiTags('Plans')
 @Controller('admin/plans') // Make sure base path matches
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AdminAuthGuard)
 export class PlansController {
   private readonly logger = new Logger(PlansController.name);
 

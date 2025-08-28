@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { CreateProcessGroupDto, UpdateProcessGroupDto, UpdateProcessGroupMembersDto } from '../dto/process-group.dto';
 
 @Injectable()

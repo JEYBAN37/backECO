@@ -10,8 +10,8 @@ import {
   Param,
   Get,
 } from '@nestjs/common';
-import { CreateActivityDto } from '../processes/admin/dto/create-activity.dto';
-import { AdminAuthGuard } from '../processes/admin/guards/admin-auth.guard';
+import { CreateActivityDto } from '../dto/create-activity.dto';
+import { AdminAuthGuard } from '../admin/admin-auth.guard';
 import { ApiResponse } from '@nestjs/swagger';
 import { ActivitiesService } from './activities.service';
 
