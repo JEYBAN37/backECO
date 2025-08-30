@@ -81,6 +81,8 @@ export class AdminService {
     this.logger.debug(`Login attempt for: ${loginDto.email}`);
     this.logger.debug(`Received password: ${loginDto.password}`);
     this.logger.debug(`Expected password: ${this.ADMIN_PASSWORD}`);
+    this.logger.debug(`Expected email: ${this.ADMIN_EMAIL}`);
+
 
     if (loginDto.email !== this.ADMIN_EMAIL || loginDto.password !== this.ADMIN_PASSWORD) {
       this.logger.warn('Invalid admin credentials');

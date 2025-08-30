@@ -6,6 +6,7 @@ import { Request } from 'express';
 import { AdminService } from './admin.service';
 import { AdminAuthGuard } from './admin-auth.guard';
 
+
 interface AdminError {
   message?: string;
   status?: boolean;
@@ -13,7 +14,7 @@ interface AdminError {
 }
 
 @ApiTags('Admin')
-@Controller('admin')
+@Controller('admin/')
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
@@ -81,6 +82,7 @@ export class AdminController {
   }
 
   @Get('users')
+  @UseGuards(AdminAuthGuard)
   @ApiResponse({ status: 200, description: 'Lista de usuarios obtenida' })
   async getUsers(@Req() request: Request) {
     try {

@@ -10,14 +10,17 @@ import {
   HttpStatus,
   Req,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 
 import { NotificationPlanDto } from '../dto/notification-plan.dto';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { NotificationPlanService } from './notification-plan.service';
+import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @ApiTags('Notification Plans')
+@UseGuards(AdminAuthGuard)
 @Controller('admin/notification-plans')
 export class NotificationPlanController {
   private readonly logger = new Logger(NotificationPlanController.name);

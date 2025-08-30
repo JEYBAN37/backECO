@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Logger,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
@@ -17,7 +18,7 @@ import { UpdateNotificationSettingsDto } from '../dto/update-notification-settin
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
-@Controller('user')
+@Controller('admin/users/')
 @UseGuards(AdminAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
@@ -38,12 +39,11 @@ export class UserController {
     return this.userService.getUser(token);
   }
 
-  @Get('stats')
-  async getUserStats(@Req() request: Request) {
+  @Get(':id/stats')
+  async getUserStats(@Param('id') userId: string) {
     try {
       this.logger.log('📊 Recibiendo petición GET /user/stats');
-      
-      const userId = (request as any).user?.uid;
+      this.logger.debug('👉 User ID recibido:', userId);
       if (!userId) {
         throw new HttpException('No user ID found', HttpStatus.UNAUTHORIZED);
       }
@@ -56,7 +56,7 @@ export class UserController {
         message: 'Estadísticas obtenidas correctamente',
       };
 
-      this.logger.log('✅ Respuesta exitosa:', JSON.stringify(response, null, 2));
+      this.logger.log('✅ Respuesta exitosa:');
       return response;
     } catch (error: unknown) {
       this.logger.error('❌ Error en getUserStats:', error);
