@@ -1,11 +1,20 @@
-import { Controller, Post, Body, Get, UseGuards, Logger, HttpStatus, HttpException, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Logger,
+  HttpStatus,
+  HttpException,
+  Req,
+} from '@nestjs/common';
 
 import { AdminLoginDto } from '../dto/admin-login.dto';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AdminService } from './admin.service';
 import { AdminAuthGuard } from './admin-auth.guard';
-
 
 interface AdminError {
   message?: string;
@@ -18,15 +27,14 @@ interface AdminError {
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
-  constructor(
-    private readonly adminService: AdminService) { }
+  constructor(private readonly adminService: AdminService) {}
 
   @UseGuards() // Disable guards for this route
   @Post('login')
   async login(@Body() loginDto: AdminLoginDto) {
     try {
       this.logger.log('Intento de login administrativo');
-      const result = await this.adminService.validateAdmin(loginDto);
+      const result = await this.adminService.validateUser(loginDto);
 
       if (!result.status) {
         throw new HttpException(result, HttpStatus.UNAUTHORIZED);
@@ -37,8 +45,32 @@ export class AdminController {
       this.logger.error('Error en login:', error);
       const adminError: AdminError = {
         status: false,
-        message: error instanceof Error ? error.message : 'Error en la autenticación',
+        message:
+          error instanceof Error ? error.message : 'Error en la autenticación',
         error: 'AUTH_ERROR',
+      };
+      throw new HttpException(adminError, HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  // A simple route to validate admin access
+  @Post('login/privileged')
+  async loginAdmin(@Body() loginDto: AdminLoginDto) {
+    try {
+      this.logger.log('Intento de login administrativo');
+      if (!loginDto.email || !loginDto.password) {
+        throw new HttpException(
+          'Email and password are required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      return await this.adminService.validateAdmin(loginDto);
+    } catch (error: unknown) {
+      this.logger.error('Error en login:', error);
+      const adminError: AdminError = {
+        status: false,
+        message:
+          error instanceof Error ? error.message : 'Error en la autenticación',
       };
       throw new HttpException(adminError, HttpStatus.UNAUTHORIZED);
     }
@@ -61,15 +93,18 @@ export class AdminController {
         status: true,
         message: 'Admin backend connection successful',
         timestamp: new Date().toISOString(),
-        endpoint: '/admin/check'
+        endpoint: '/admin/check',
       };
     } catch (error) {
       this.logger.error('Error checking admin connection:', error);
-      throw new HttpException({
-        status: false,
-        message: 'Error checking admin connection',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message: 'Error checking admin connection',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -81,13 +116,15 @@ export class AdminController {
     };
   }
 
-  @Get('users')
+  @Get('usersAll')
   @UseGuards(AdminAuthGuard)
   @ApiResponse({ status: 200, description: 'Lista de usuarios obtenida' })
   async getUsers(@Req() request: Request) {
     try {
       this.logger.log('📋 Obteniendo lista de usuarios...');
-      this.logger.debug(`Headers recibidos: ${JSON.stringify(request.headers)}`);
+      this.logger.debug(
+        `Headers recibidos: ${JSON.stringify(request.headers)}`,
+      );
 
       const users = await this.adminService.getFirebaseUsers();
 
@@ -97,14 +134,18 @@ export class AdminController {
         status: true,
         message: 'Usuarios obtenidos correctamente',
         data: users,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       this.logger.error('❌ Error getting users:', error);
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error getting users',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error getting users',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

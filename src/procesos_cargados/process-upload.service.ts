@@ -20,39 +20,22 @@ export class ProcessUploadService {
       this.logger.log('🔄 Starting process upload...');
 
       // Validaciones iniciales
-      if (!data.pausePlanIds?.length) {
-        throw new BadRequestException('Se requiere al menos un plan de pausa');
+      if (!data.categories?.length) {
+        throw new BadRequestException('Se requiere al menos una categoría');
       }
 
-      // Verificar que los planes existan
-      const plansRef = db.collection('plans');
-      const planSnapshots = await db.getAll(
-        ...data.pausePlanIds.map(id => plansRef.doc(id))
+      // Verificar que los ejercicios existan
+      const exercisesRef = db.collection('categories');
+      const exerciseSnapshots = await db.getAll(
+        ...data.categories.map(id => exercisesRef.doc(id))
       );
 
-      const invalidPlans: string[] = [];
-      const validPlans: { id: string; [key: string]: any }[] = [];
+      const missingExercises = exerciseSnapshots
+        .map((snap, idx) => (!snap.exists ? data.categories[idx] : null))
+        .filter(id => id !== null);
 
-      planSnapshots.forEach((doc, index) => {
-        const planId = data.pausePlanIds[index];
-        const planData = doc.data();
-
-        if (doc.exists) {
-          validPlans.push({
-            id: planId,
-            ...planData
-          });
-        } else {
-          invalidPlans.push(planId);
-          this.logger.warn(`⚠️ Plan not found: ${planId}`);
-        }
-      });
-
-      // Si no hay ningún plan válido, no tiene sentido crear el proceso
-      if (validPlans.length === 0) {
-        const errorMessage = `Ninguno de los planes proporcionados existe. No se puede crear el proceso.`;
-        this.logger.error(errorMessage);
-        throw new NotFoundException(errorMessage);
+      if (missingExercises.length > 0) {
+        throw new NotFoundException(`Ejercicios no encontrados: ${missingExercises.join(', ')}`);
       }
 
       // Verificar grupo
@@ -67,32 +50,19 @@ export class ProcessUploadService {
       const now = new Date().toISOString();
       const processData = {
         groupId: data.groupId,
-        processName: data.processName,
-        pausePlans: validPlans,
-        startDate: data.startDate,
+        nombre: data.nombre,
+        categories: data.categories,
         createdAt: now,
         updatedAt: now,
-        status: 'scheduled',
+        estado: false,
       };
 
-      processRef = db.collection('processes').doc();
+      processRef = db.collection('plans').doc();
       batch.set(processRef, processData);
-
-      // Marcar los planes como "asignados"
-      for (const plan of validPlans) {
-        const planRef = plansRef.doc(plan.id);
-        batch.update(planRef, { status: 'assigned', updatedAt: now });
-      }
-
       await batch.commit();
-      collectedPlans = validPlans;
-
+  
       this.logger.log(`✅ Process created with ID: ${processRef.id}`);
-      return {
-        id: processRef.id,
-        ...processData,
-        omittedPlans: invalidPlans.length > 0 ? invalidPlans : undefined,
-      };
+      return { id: processRef.id, ...processData };
 
     } catch (error) {
       this.logger.error('❌ Error in process upload:', error);
@@ -146,7 +116,7 @@ export class ProcessUploadService {
     groupId: string;
     groupName: string;
     startDate: string;
-    status: string;
+    status: boolean;
     plans: { id: string; [key: string]: any }[];
     createdAt: string;
     updatedAt: string;
@@ -165,7 +135,7 @@ export class ProcessUploadService {
           ...(doc.data() as Omit<Process, 'id'>)
         }))
         .filter((process): process is Process => 
-          process.status === 'active' || process.status === 'scheduled'
+          process.status === false 
         );
 
       const processesWithGroups = await Promise.all(
@@ -215,7 +185,7 @@ export class ProcessUploadService {
 
       // Actualizar estado del proceso
       batch.update(processRef, { 
-        status: 'inactive',
+        status: false,
         updatedAt: new Date().toISOString()
       });
 
@@ -224,7 +194,7 @@ export class ProcessUploadService {
       if (process?.pausePlans) {
         for (const plan of process.pausePlans) {
           const planRef = db.collection('plans').doc(plan.id);
-          batch.update(planRef, { status: 'available', updatedAt: new Date().toISOString() });
+          batch.update(planRef, { status: false, updatedAt: new Date().toISOString() });
         }
       }
 

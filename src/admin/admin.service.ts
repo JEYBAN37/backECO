@@ -4,6 +4,8 @@ import { UserResponseDto } from '../dto/user.response.dto';
 import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
 import { AdminLoginDto } from 'src/dto/admin-login.dto';
+import { UserService } from 'src/user_phone/user.service';
+import { ideahub } from 'googleapis/build/src/apis/ideahub';
 
 @Injectable()
 export class AdminService {
@@ -12,7 +14,11 @@ export class AdminService {
   private readonly ADMIN_PASSWORD: string;
   private readonly JWT_SECRET: string;
 
-  constructor(private readonly firebaseService: FirebaseService,private readonly configService: ConfigService,) {
+  constructor(
+    private readonly firebaseService: FirebaseService,
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     this.ADMIN_EMAIL =
       this.configService.get<string>('ADMIN_EMAIL') || 'default_admin_email';
     this.ADMIN_PASSWORD =
@@ -77,45 +83,102 @@ export class AdminService {
     }
   }
 
-    async validateAdmin(loginDto: AdminLoginDto): Promise<{ status: boolean; message: string; data: any }> {
-    this.logger.debug(`Login attempt for: ${loginDto.email}`);
-    this.logger.debug(`Received password: ${loginDto.password}`);
-    this.logger.debug(`Expected password: ${this.ADMIN_PASSWORD}`);
-    this.logger.debug(`Expected email: ${this.ADMIN_EMAIL}`);
-
-
-    if (loginDto.email !== this.ADMIN_EMAIL || loginDto.password !== this.ADMIN_PASSWORD) {
-      this.logger.warn('Invalid admin credentials');
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
+  async validateUser(
+    loginDto: AdminLoginDto,
+  ): Promise<{ status: boolean; message: string; data: any }> {
     try {
-      // Crear un custom token usando Firebase Admin
-      const uid = 'admin-' + Date.now();
-      const customToken = await this.firebaseService.getAuth().createCustomToken(uid, {
-        admin: true,
-        email: loginDto.email
-      });
+      const userRecord = await this.firebaseService
+        .getAuth()
+        .getUserByEmail(loginDto.email);
+      this.logger.log(`Admin user found: ${userRecord.email}`);
+      const db = this.firebaseService.getFirestore();
+      const userAdditionalInfo = await this.userService.getUserAdditionalInfo(
+        userRecord.uid,
+        db,
+      );
 
-      this.logger.log('Admin login successful');
+      const customToken = await this.firebaseService
+        .getAuth()
+        .createCustomToken(userRecord.uid, {
+          admin: true,
+          email: userRecord.email,
+        });
       return {
         status: true,
-        message: 'Login administrativo exitoso',
+        message: 'Login usuario exitoso',
         data: {
-          email: loginDto.email,
-          role: 'admin',
+          id: userRecord.uid,
+          email: userRecord.email,
           permissions: ['full_access'],
           token: customToken,
           timestamp: new Date().toISOString(),
+          userdata: userAdditionalInfo,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error en validación de usuario:', error);
+      throw new UnauthorizedException(
+        'Credenciales inválidas' +
+          (error instanceof Error ? `: ${error.message}` : ''),
+      );
+    }
+  }
+
+  async validateAdmin(loginDto: AdminLoginDto) {
+    try {
+      const userRecord = await this.firebaseService
+        .getAuth()
+        .getUserByEmail(loginDto.email);
+      this.logger.log(`Admin user found: ${userRecord.email}`);
+
+      if(!this.verifyAdmin(loginDto)) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+
+      const db = this.firebaseService.getFirestore();
+      const userAdditionalInfo = await this.userService.getUserAdditionalInfo(
+        userRecord.uid,
+        db,
+      );
+
+      const customToken = await this.firebaseService
+        .getAuth()
+        .createCustomToken(userRecord.uid, {
+          admin: true,
+          email: userRecord.email,
+        });
+      return {
+        status: true,
+        message: 'Login Admin exitoso',
+        data: {
+          id: userRecord.uid,
+          email: userRecord.email,
+          permissions: ['full_access'],
+          token: customToken,
+          timestamp: new Date().toISOString(),
+          userdata: userAdditionalInfo,
         },
       };
     } catch (error) {
       this.logger.error('Error en validación de admin:', error);
-      throw new UnauthorizedException('Error en la autenticación');
+      throw new UnauthorizedException(
+        'Error en la autenticación' +
+          (error instanceof Error ? `: ${error.message}` : ''),
+      );
+    }
+  }
+
+  verifyAdmin(loginDto: AdminLoginDto) {
+    if (
+      loginDto.email === this.ADMIN_EMAIL ||
+      loginDto.password === this.ADMIN_PASSWORD
+    ) {
+      return true;
     }
   }
 
   async getFirebaseUsers(): Promise<UserResponseDto[]> {
+    this.logger.debug('🔍 Iniciando obtención de usuarios de Firebase...');
     try {
       this.logger.debug('🔍 Iniciando obtención de usuarios de Firebase...');
 
@@ -138,43 +201,34 @@ export class AdminService {
         throw new Error('No se pudo obtener la lista de usuarios');
       }
 
-      this.logger.debug(`✅ Se encontraron ${listUsersResult.users.length} usuarios`);
+      this.logger.debug(
+        `✅ Se encontraron ${listUsersResult.users.length} usuarios`,
+      );
+      if (listUsersResult.users.length > 0) {
+        const firstUser = listUsersResult.users[0];
+        this.logger.debug(
+          `Atributos del primer usuario: ${Object.keys(firstUser).join(', ')}`,
+        );
+      }
 
-      const db = this.firebaseService.getFirestore();
-
-      const usersData = await Promise.all(listUsersResult.users.map(async (user) => {
-        try {
-          const userDoc = await db.collection('users').doc(user.uid).get();
-          const userData = userDoc.data() || {};
-
-          const userResponse: UserResponseDto = {
-            uid: user.uid,
-            email: user.email || null,
-            displayName: user.displayName || userData.name || null,
-            photoURL: user.photoURL || null,
-            disabled: user.disabled,
-            metadata: {
-              creationTime: user.metadata.creationTime,
-              lastSignInTime: user.metadata.lastSignInTime
-            },
+      return listUsersResult.users.map(
+        (user: admin.auth.UserRecord): UserResponseDto => ({
+          uid: user.uid,
+          email: user.email ?? null,
+          displayName: user.displayName ?? 'Sin nombre',
+          photoURL: user.photoURL ?? null,
+          disabled: user.disabled,
+          metadata: {
             creationTime: user.metadata.creationTime,
             lastSignInTime: user.metadata.lastSignInTime,
-            status: user.disabled ? 'disabled' : 'active'
-          };
-
-          return userResponse;
-        } catch (error) {
-          this.logger.error(`Error obteniendo datos de usuario ${user.uid}:`, error);
-          return null;
-        }
-      }));
-
-      return usersData.filter((user): user is UserResponseDto => user !== null);
-
+          },
+        }),
+      );
     } catch (error) {
       this.logger.error('❌ Error obteniendo usuarios de Firebase:', error);
-      throw new Error(`Error al obtener usuarios de Firebase: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      throw new Error(
+        `Error al obtener usuarios de Firebase: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      );
     }
   }
-
 }

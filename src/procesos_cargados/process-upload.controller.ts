@@ -21,12 +21,8 @@ export class ProcessUploadController {
   @ApiResponse({ status: 201, description: 'Proceso creado exitosamente' })
   async uploadProcess(@Body() data: ProcessUploadDto) {
     try {
-      this.logger.log(`📤 Subiendo proceso: ${data.processName}`);
+      this.logger.log(`📤 Subiendo proceso: ${data.nombre}`);
       const process = await this.processUploadService.uploadProcess(data);
-
-      this.logger.log(`🔄 Sincronizando proceso con usuarios del grupo: ${data.groupId}`);
-      await this.syncService.syncProcessToUsers(process.id, data.groupId);
-
       return {
         status: true,
         message: 'Proceso subido y sincronizado correctamente',
@@ -80,4 +76,6 @@ export class ProcessUploadController {
       }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  
 }

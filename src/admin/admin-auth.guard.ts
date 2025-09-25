@@ -10,7 +10,7 @@ interface DecodedTokenWithEmail {
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
     private readonly logger = new Logger(AdminAuthGuard.name);
-    constructor(private firebaseService: FirebaseService) { }
+    constructor(private readonly firebaseService: FirebaseService) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
@@ -24,9 +24,10 @@ export class AdminAuthGuard implements CanActivate {
             const tokenInfo: DecodedTokenWithEmail = await this.firebaseService.verifyToken(token);
             request.user = tokenInfo;
             this.logger.debug(`✅ [Auth] Usuario autenticado: ${tokenInfo.email}`);
-            return tokenInfo.role === 'admin';
-        } catch (error) {
-            throw new UnauthorizedException('Invalid token');
+            this.logger.debug(`🔑 [Auth] Role del usuario: ${tokenInfo.role}`);
+            return tokenInfo.role === 'admin' || tokenInfo.role === 'user';
+        } catch (error : any) {
+            throw new UnauthorizedException('Invalid token: ' + error.message);
         }
     }
 }

@@ -25,6 +25,7 @@ export class SyncService {
       }
       
       const groupData = groupDoc.data();
+      this.logger.log(`Group Data: ${JSON.stringify(groupData)}`);
       const members = groupData?.members || [];
       
       // 3. Sincronizar con cada usuario del grupo
@@ -32,7 +33,7 @@ export class SyncService {
       for (const member of members) {
         const userProcessRef = db
           .collection('users')
-          .doc(member.id)
+          .doc(member.toString())
           .collection('assignedProcesses')
           .doc(processId);
           

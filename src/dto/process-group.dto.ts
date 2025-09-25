@@ -1,23 +1,6 @@
 import { IsString, IsNotEmpty, IsArray, IsOptional, IsHexColor } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ProcessGroupMemberDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  id!: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  email!: string;
-}
-
 export class CreateProcessGroupDto {
   @ApiProperty({ description: 'Nombre del grupo de proceso' })
   @IsString()
@@ -34,17 +17,17 @@ export class CreateProcessGroupDto {
   @IsNotEmpty()
   color!: string;
 
-  @ApiProperty({ description: 'Lista de miembros del grupo', type: [ProcessGroupMemberDto] })
+  @ApiProperty({ description: 'Lista de miembros del grupo' })
   @IsArray()
   @IsOptional()
-  members: ProcessGroupMemberDto[] = [];
+  members: string[] = [];
 }
 
 export class UpdateProcessGroupDto extends CreateProcessGroupDto {}
 
 export class UpdateProcessGroupMembersDto {
-  @ApiProperty({ type: [ProcessGroupMemberDto] })
+  @ApiProperty()
   @IsArray()
   @IsNotEmpty()
-  members!: ProcessGroupMemberDto[];
+  members!: string[];
 }

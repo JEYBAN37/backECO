@@ -61,7 +61,7 @@ async function bootstrap() {
 
     // CORS seguro
     app.enableCors({
-      origin: ['http://localhost:56881', 'http://127.0.0.1:56881'],
+      origin: ['http://localhost:54884', 'http://127.0.0.1:54884'],
       credentials: true,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       allowedHeaders: [

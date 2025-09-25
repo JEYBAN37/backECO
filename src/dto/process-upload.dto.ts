@@ -10,19 +10,22 @@ export class ProcessUploadDto {
   @ApiProperty({ description: 'Nombre del proceso' })
   @IsString()
   @IsNotEmpty()
-  processName!: string;
+  nombre!: string;
 
-  @ApiProperty({ 
-    type: [String],
-    description: 'Array de IDs de planes de pausa a incluir en el proceso'
-  })
   @IsArray()
   @IsNotEmpty()
-  pausePlanIds!: string[];
+  categories!: string[];
 
   @ApiProperty({ description: 'Fecha de inicio del proceso en formato ISO' })
   @IsDateString()
   startDate!: string;
+
+  @ApiProperty({ description: 'Fecha de fin del proceso en formato ISO' })
+  @IsDateString()
+  endDate!: string;
+
+  @ApiProperty({ description: 'Estado del proceso' })
+  estado?: string;
 
   constructor(partial: Partial<ProcessUploadDto>) {
     Object.assign(this, partial);

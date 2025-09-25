@@ -6,6 +6,6 @@ export interface Process {
   startDate: string;
   createdAt: string;
   updatedAt: string;
-  status: 'active' | 'scheduled' | 'inactive' | 'pending';
+  status: boolean;
   color?: string;
 }

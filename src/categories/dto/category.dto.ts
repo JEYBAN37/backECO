@@ -2,11 +2,11 @@ import { IsNotEmpty, IsString, IsArray, ValidateNested, IsOptional, IsDateString
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-class PlanActivityDto {
+export class ActivitiesDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty({ message: 'El ID de la actividad es requerido' })
-  activityId!: string;
+  actividadId!: string;
 
   @ApiProperty()
   @IsNumber()
@@ -14,22 +14,26 @@ class PlanActivityDto {
   order!: number;
 }
 
-export class CreatePlanDto {
+export class CreateCategoryDto {
   @ApiProperty({ description: 'Nombre del plan' })
   @IsString()
   @IsNotEmpty()
-  name!: string;
+  nombre!: string;
 
   @ApiProperty({ description: 'Descripción del plan' })
   @IsString()
   @IsNotEmpty()
-  description!: string;
+  descripcion!: string;
+
+  @ApiProperty({ description: 'Color del plan' })
+  @IsNotEmpty()
+  color!: number;
 
   @ApiProperty({ description: 'Lista de actividades del plan' })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => PlanActivityDto)
-  activities!: PlanActivityDto[];
+  @Type(() => ActivitiesDto)
+  activities!: ActivitiesDto[];
 
   @IsString()
   @IsOptional()
@@ -38,9 +42,11 @@ export class CreatePlanDto {
   @IsDateString()
   @IsNotEmpty()
   createdAt!: string;
+
+  status?: boolean;
 }
 
-export interface Plan extends CreatePlanDto {
-  id: string;
-  updatedAt: string;
+export interface Category extends CreateCategoryDto {
+  id?: string;
+  updatedAt?: string;
 }

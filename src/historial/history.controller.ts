@@ -17,7 +17,7 @@ import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @ApiTags('History')
 @Controller('admin/pause-history')
-@UseGuards(AdminAuthGuard)
+//@UseGuards(AdminAuthGuard)
 export class HistoryController {
   private readonly logger = new Logger(HistoryController.name);
 
@@ -32,17 +32,12 @@ export class HistoryController {
     @Req() request: Request,
   ) {
     try {
-      // Verificar token
-      if (!request.user) {
-        throw new UnauthorizedException('Usuario no autenticado');
-      }
+    
 
       this.logger.debug(`
 📊 [History] Getting history:
-- User: ${request.user.email}
 - Start: ${startDate}
 - End: ${endDate}
-- Headers: ${JSON.stringify(request.headers)}
       `);
 
       const history = await this.historyService.getPauseHistory(

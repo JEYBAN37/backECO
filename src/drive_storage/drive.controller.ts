@@ -4,7 +4,6 @@ import { Controller, Get, HttpException, HttpStatus, Param, Res, UseGuards } fro
 import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
 
 @Controller('admin/drive')
-@UseGuards(AdminAuthGuard)
 export class DriveController {
   constructor(private readonly driveService: DriveService) {}
 

@@ -1,35 +1,37 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
   UseGuards,
   Logger,
   HttpException,
-  HttpStatus 
+  HttpStatus,
 } from '@nestjs/common';
 import { AdminAuthGuard } from '../admin/admin-auth.guard';
 import { ProcessGroupService } from './process-group.service';
-import { 
-  CreateProcessGroupDto, 
-  UpdateProcessGroupDto, 
-  UpdateProcessGroupMembersDto 
+import {
+  CreateProcessGroupDto,
+  UpdateProcessGroupDto,
+  UpdateProcessGroupMembersDto,
 } from '../dto/process-group.dto';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Process Groups')
 @Controller('admin/process-groups')
-@UseGuards(AdminAuthGuard)
 export class ProcessGroupsController {
   private readonly logger = new Logger(ProcessGroupsController.name);
 
   constructor(private readonly processGroupService: ProcessGroupService) {}
 
   @Get()
-  @ApiResponse({ status: 200, description: 'Lista de grupos obtenida correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de grupos obtenida correctamente',
+  })
   async getProcessGroups() {
     try {
       const groups = await this.processGroupService.getProcessGroups();
@@ -39,10 +41,14 @@ export class ProcessGroupsController {
         data: groups,
       };
     } catch (error) {
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error getting groups',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error getting groups',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -57,10 +63,14 @@ export class ProcessGroupsController {
         data: group,
       };
     } catch (error) {
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error creating group',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error creating group',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -78,10 +88,14 @@ export class ProcessGroupsController {
         data: group,
       };
     } catch (error) {
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error updating group',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error updating group',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -95,15 +109,22 @@ export class ProcessGroupsController {
         message: 'Grupo eliminado correctamente',
       };
     } catch (error) {
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error deleting group',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error deleting group',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Put(':id/members')
-  @ApiResponse({ status: 200, description: 'Miembros del grupo actualizados correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Miembros del grupo actualizados correctamente',
+  })
   async updateGroupMembers(
     @Param('id') id: string,
     @Body() data: UpdateProcessGroupMembersDto,
@@ -116,10 +137,92 @@ export class ProcessGroupsController {
         data: group,
       };
     } catch (error) {
-      throw new HttpException({
-        status: false,
-        message: error instanceof Error ? error.message : 'Error updating members',
-      }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error updating members',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':id')
+  @ApiResponse({
+    status: 200,
+    description: 'Detalles del grupo obtenidos correctamente',
+  })
+  async getProcessGroupById(@Param('id') id: string) {
+    try {
+      const group = await this.processGroupService.getProcessesByGroupId(id);
+      return {
+        status: true,
+        message: 'Detalles del grupo obtenidos correctamente',
+        data: group,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Error getting group details',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete('/:id/plans')
+  @ApiResponse({
+    status: 200,
+    description: 'Planes del grupo eliminados correctamente',
+  })
+  async deleteGroupPlans(@Param('id') id: string, @Body() ids: string[]) {
+    try {
+      await this.processGroupService.deleteGroupPlans(id, ids);
+      return {
+        status: true,
+        message: 'Planes del grupo eliminados correctamente',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Error deleting group plans',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('/plans/all')
+  @ApiResponse({
+    status: 200,
+    description: 'Todos los planes obtenidos correctamente',
+  })
+  async getAllPlans() {
+    try {
+      const plans = await this.processGroupService.getAllPlans();
+      return {
+        status: true,
+        message: 'Planes obtenidos correctamente',
+        data: plans,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: false,
+          message:
+            error instanceof Error ? error.message : 'Error getting all plans',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

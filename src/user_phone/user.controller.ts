@@ -9,6 +9,8 @@ import {
   Logger,
   UseGuards,
   Param,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
@@ -17,9 +19,9 @@ import { FirebaseService } from '@firebase/firebase.service';
 import { UpdateNotificationSettingsDto } from '../dto/update-notification-settings.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { AdminAuthGuard } from 'src/admin/admin-auth.guard';
+import { CreateUserDto } from 'src/dto/create-user.dto';
 
 @Controller('admin/users/')
-@UseGuards(AdminAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
 
@@ -29,6 +31,7 @@ export class UserController {
   ) {}
 
   @Get()
+  @UseGuards(AdminAuthGuard)
   async getUser(@Req() request: Request) {
     const token = request.headers.authorization?.split(' ')[1];
 
@@ -40,7 +43,8 @@ export class UserController {
   }
 
   @Get(':id/stats')
-  async getUserStats(@Param('id') userId: string) {
+  //@UseGuards(AdminAuthGuard)
+  async getUserStats(@Param('id') userId: string, @Query('date') date: string) {
     try {
       this.logger.log('📊 Recibiendo petición GET /user/stats');
       this.logger.debug('👉 User ID recibido:', userId);
@@ -48,7 +52,7 @@ export class UserController {
         throw new HttpException('No user ID found', HttpStatus.UNAUTHORIZED);
       }
 
-      const stats = await this.userService.getUserStats(userId);
+      const stats = await this.userService.getUserStats(userId , date);
 
       const response = {
         status: true,
@@ -74,6 +78,7 @@ export class UserController {
   }
 
   @Get('stats/all')
+  @UseGuards(AdminAuthGuard)
   async getAllUserStats() {
     try {
       this.logger.log('📊 Recibiendo petición GET /user/stats/all');
@@ -103,6 +108,7 @@ export class UserController {
   }
 
   @Patch('stats')
+  @UseGuards(AdminAuthGuard)
   async updateUserStats(@Body() statsData: UpdateStatsDto) {
     try {
       this.logger.log('📊 Recibiendo petición PATCH /user/stats');
@@ -131,6 +137,7 @@ export class UserController {
   }
 
   @Patch('notification-settings')
+  @UseGuards(AdminAuthGuard)
   async updateSettings(@Body() settings: UpdateNotificationSettingsDto) {
     try {
       this.logger.log('📱 Recibiendo petición PATCH /user/notification-settings');
@@ -158,6 +165,7 @@ export class UserController {
   }
 
   @Patch('profile')
+  @UseGuards(AdminAuthGuard)
   async updateUserProfile(@Body() body: UpdateProfileDto, @Req() request: Request) {
     try {
       this.logger.log('📝 Recibiendo petición PATCH /user/profile');
@@ -180,6 +188,50 @@ export class UserController {
       throw new HttpException(
         { 
           message: 'Error al actualizar perfil',
+          status: false,
+          error: errorMessage
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post('register')
+  async registerUser(@Body() registerDto: CreateUserDto) {
+    try {
+      const result = await this.userService.createUser(registerDto);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      throw new HttpException(
+        {
+          message: 'Error al registrar usuario',
+          status: false,
+          error: errorMessage
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body('email') email: string) {
+    try {
+      if (!email) {
+        throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+      }
+
+      await this.userService.sendPasswordResetEmail(email);
+      return {
+        status: true,
+        message: 'Password reset email sent successfully',
+      };
+    } catch (error: unknown) {
+      this.logger.error('❌ Error en resetPassword:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      throw new HttpException(
+        {
+          message: 'Error al enviar correo de restablecimiento de contraseña',
           status: false,
           error: errorMessage
         },
