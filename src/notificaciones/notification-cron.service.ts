@@ -50,6 +50,7 @@ export class NotifierService {
     ).padStart(2, '0')}`;
 
     await this.sendNotification(fechaHoy, currentTime, db, now);
+    await this.sendActiviesNotifications(fechaHoy, currentTime, db, now);
   }
 
   private async sendNotification(
@@ -212,6 +213,73 @@ export class NotifierService {
       }
     }
   }
+
+  private async sendActiviesNotifications(
+    fechaHoy: string,
+    currentTime: string,
+    db: FirebaseFirestore.Firestore,
+    now: Date,
+  ) {
+    console.log(
+      `⏰ Verificando actividades para: ${fechaHoy} a las ${currentTime}`,
+    );
+    // Obtener todas las actividades disponibles
+    const snapshot = await db.collection('exercises').get();
+    const actividades = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as { nombre?: string }) }));
+
+    // Obtener las frecuencias programadas de notificación
+    const programadosFrecuencias = await db.collection('notificationPauses').get();
+
+    for (const doc of programadosFrecuencias.docs) {
+      const frecuenciaData = doc.data();
+      const userId = frecuenciaData.idUser;
+      const frecuenciaHoras = frecuenciaData.frecuencia; // frecuencia en horas (int)
+      const notifiActive = frecuenciaData.notifiActive;
+
+      if (!notifiActive || !frecuenciaHoras) continue;
+
+      // Calcular si corresponde enviar notificación en este momento
+      // Ejemplo: si frecuencia = 3, enviar cada 3 horas desde las 8:00 hasta las 23:00
+      const horaInicio = 8;
+      const horaFin = 23;
+      const horaActual = now.getHours();
+
+      if (horaActual < horaInicio || horaActual > horaFin) continue;
+
+      // Verificar si la hora actual es múltiplo de la frecuencia desde la hora de inicio
+      if ((horaActual - horaInicio) % frecuenciaHoras === 0 && now.getMinutes() === 0) {
+      // Seleccionar una actividad aleatoria
+      const actividadAleatoria = actividades[Math.floor(Math.random() * actividades.length)];
+
+      // Buscar los dispositivos del usuario
+      const devicesSnap = await db.collection('devices').where('userId', '==', userId).get();
+      const tokens: string[] = [];
+      devicesSnap.forEach(d => {
+        const device = d.data();
+        if (device.deviceToken) tokens.push(device.deviceToken);
+      });
+
+      if (tokens.length === 0) continue;
+
+      // Enviar notificación
+      const message = {
+        notification: {
+        title: `¡Hora de moverse! 💪`,
+        body: `Te sugerimos: ${actividadAleatoria?.nombre || 'una actividad'}`
+        },
+        data: {
+          actividadId: actividadAleatoria?.id
+        },
+        tokens,
+      };
+
+      const response = await admin.messaging().sendEachForMulticast(message);
+      const successCount = response.responses.filter(r => r.success).length;
+      this.logger.log(`Notificación de frecuencia enviada a ${userId}: ${successCount} dispositivos`);
+      }
+    }
+  }
+
   private pad(num: number): string {
     return num.toString().padStart(2, '0');
   }
