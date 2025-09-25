@@ -14,7 +14,7 @@ async function bootstrap() {
     });
 
     const configService = app.get(ConfigService);
-    const port = process.env.PORT || configService.get<number>('PORT') || 4300;
+    const port = process.env.PORT || 4300;
     const environment = configService.get<string>('NODE_ENV') || 'development';
 
     // CORS seguro

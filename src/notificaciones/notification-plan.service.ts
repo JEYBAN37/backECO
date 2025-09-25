@@ -208,7 +208,6 @@ export class NotificationPlanService {
               // Obtener el id de referencia de cada documento
               const userRefs = usersSnap.docs.map((doc) => doc.id);
 
-
               // Filtrar usuarios que tienen pausas activas hoy entre las 8:00 y las 23:00
               const startHour = 8;
               const endHour = 23;
@@ -233,18 +232,12 @@ export class NotificationPlanService {
                 `Found ${userPauseSnap.docs.length} active pauses for users.`,
               );
 
-              for (const userRef of usersDisponibles) {
-                const userId = userRef;
-
+              for (const userId of usersDisponibles) {
                 // 3. Obtener tokens de dispositivos del usuario
                 const devicesSnap = await db
                   .collection('devices')
                   .where('userId', '==', userId)
                   .get();
-
-                this.logger.log(
-                  `Fetching devices for user: ${userId}, found ${devicesSnap.docs.length} devices.`,
-                );
 
                 devicesSnap.forEach((d) => {
                   const device = d.data();

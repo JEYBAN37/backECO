@@ -83,7 +83,7 @@ export class NotifierService {
           for (const p of planes) {
             if (fecha === fechaHoy) {
               // ----  calcular una hora antes ----
-              const [h, m] = p.time.split(':').map(Number);
+              const [h, m] = plan.time.split(':').map(Number);
               const planDate = new Date();
               planDate.setHours(h, m, 0, 0);
               planDate.setHours(planDate.getHours() - 1); // restar 1 hora
@@ -109,6 +109,10 @@ export class NotifierService {
                 '0',
               )}:${String(planDateMinusSixHours.getMinutes()).padStart(2, '0')}`;
 
+              console.log(
+                `⏰ ${planDate} Verificando notificaciones para: ${planTimeMinusOneHour} y ${planTimeMinusSixHours}`,
+              );
+
               if (
                 currentTime === planTimeMinusOneHour ||
                 currentTime === planTimeMinusSixHours
@@ -128,10 +132,7 @@ export class NotifierService {
                 const userRefs = usersSnap.docs.map((d) => d.id);
 
                 // Filtrar usuarios que tienen pausas activas hoy entre las 8:00 y las 23:00
-                now.setHours(0, 0, 0, 0);
-
                 const currentHourStr = `${this.pad(now.getHours())}:${this.pad(now.getMinutes())}`; // Ej: "09:05"
-                now.setHours(0, 0, 0, 0);
 
                 const userPauseSnap = await db
                   .collection('notificationPauses')
@@ -171,9 +172,7 @@ export class NotifierService {
                   notification: {
                     title: `Próxima actividad: ${p.name} 🏋️‍♂️`,
                     body: `⏰ En ${
-                      currentTime === planTimeMinusOneHour
-                        ? '1 hora'
-                        : '6 horas'
+                      currentTime === planTimeMinusOneHour ? '1 hora' : '1 hora'
                     } tienes ${p.name} (${p.time}) `,
                   },
                   data: {
@@ -225,10 +224,15 @@ export class NotifierService {
     );
     // Obtener todas las actividades disponibles
     const snapshot = await db.collection('exercises').get();
-    const actividades = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as { nombre?: string }) }));
+    const actividades = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as { nombre?: string }),
+    }));
 
     // Obtener las frecuencias programadas de notificación
-    const programadosFrecuencias = await db.collection('notificationPauses').get();
+    const programadosFrecuencias = await db
+      .collection('notificationPauses')
+      .get();
 
     for (const doc of programadosFrecuencias.docs) {
       const frecuenciaData = doc.data();
@@ -247,35 +251,44 @@ export class NotifierService {
       if (horaActual < horaInicio || horaActual > horaFin) continue;
 
       // Verificar si la hora actual es múltiplo de la frecuencia desde la hora de inicio
-      if ((horaActual - horaInicio) % frecuenciaHoras === 0 && now.getMinutes() === 0) {
-      // Seleccionar una actividad aleatoria
-      const actividadAleatoria = actividades[Math.floor(Math.random() * actividades.length)];
+      if (
+        (horaActual - horaInicio) % frecuenciaHoras === 0 &&
+        now.getMinutes() === 0
+      ) {
+        // Seleccionar una actividad aleatoria
+        const actividadAleatoria =
+          actividades[Math.floor(Math.random() * actividades.length)];
 
-      // Buscar los dispositivos del usuario
-      const devicesSnap = await db.collection('devices').where('userId', '==', userId).get();
-      const tokens: string[] = [];
-      devicesSnap.forEach(d => {
-        const device = d.data();
-        if (device.deviceToken) tokens.push(device.deviceToken);
-      });
+        // Buscar los dispositivos del usuario
+        const devicesSnap = await db
+          .collection('devices')
+          .where('userId', '==', userId)
+          .get();
+        const tokens: string[] = [];
+        devicesSnap.forEach((d) => {
+          const device = d.data();
+          if (device.deviceToken) tokens.push(device.deviceToken);
+        });
 
-      if (tokens.length === 0) continue;
+        if (tokens.length === 0) continue;
 
-      // Enviar notificación
-      const message = {
-        notification: {
-        title: `¡Hora de moverse! 💪`,
-        body: `Te sugerimos: ${actividadAleatoria?.nombre || 'una actividad'}`
-        },
-        data: {
-          actividadId: actividadAleatoria?.id
-        },
-        tokens,
-      };
+        // Enviar notificación
+        const message = {
+          notification: {
+            title: `¡Hora de moverse! 💪`,
+            body: `Te sugerimos: ${actividadAleatoria?.nombre || 'una actividad'}`,
+          },
+          data: {
+            actividadId: actividadAleatoria?.id,
+          },
+          tokens,
+        };
 
-      const response = await admin.messaging().sendEachForMulticast(message);
-      const successCount = response.responses.filter(r => r.success).length;
-      this.logger.log(`Notificación de frecuencia enviada a ${userId}: ${successCount} dispositivos`);
+        const response = await admin.messaging().sendEachForMulticast(message);
+        const successCount = response.responses.filter((r) => r.success).length;
+        this.logger.log(
+          `Notificación de frecuencia enviada a ${userId}: ${successCount} dispositivos`,
+        );
       }
     }
   }

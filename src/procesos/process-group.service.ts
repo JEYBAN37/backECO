@@ -98,7 +98,9 @@ export class ProcessGroupService {
       const db = this.firebaseService.getFirestore();
       const groupRef = db.collection('processGroups').doc(id);
 
-      this.logger.debug(`Updating process group ${id} with data: ${JSON.stringify(data)}`);
+      this.logger.debug(
+        `Updating process group ${id} with data: ${JSON.stringify(data)}`,
+      );
 
       const doc = await groupRef.get();
       if (!doc.exists) {
@@ -213,6 +215,31 @@ export class ProcessGroupService {
         updatedAt: new Date().toISOString(),
       };
 
+      // Eliminar los usuarios de otros grupos antes de agregarlos a este grupo
+      if (data.members && data.members.length > 0) {
+        // Buscar todos los grupos donde estos usuarios ya están como miembros
+        const groupsWithMembers = await db
+          .collection('processGroups')
+          .where('members', 'array-contains-any', data.members)
+          .get();
+
+        // Para cada grupo encontrado, eliminar los usuarios de la lista de miembros
+        const batch = db.batch();
+        groupsWithMembers.forEach((groupDoc) => {
+          if (groupDoc.id !== id) {
+        const currentMembers = groupDoc.data().members || [];
+        const updatedMembers = currentMembers.filter(
+          (member: string) => !data.members.includes(member),
+        );
+        batch.update(groupDoc.ref, { members: updatedMembers });
+        this.logger.debug(
+          `Removed users ${JSON.stringify(data.members)} from group ${groupDoc.id}`,
+        );
+          }
+        });
+        await batch.commit();
+      }
+
       await groupRef.update(updateData);
       const users = await this.assignUsersToGroup({
         groupId: id,
@@ -241,16 +268,15 @@ export class ProcessGroupService {
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
       // obtener el grupo
-      const snapshot = await db
-        .collection('processGroups')
-        .doc(groupId)
-        .get();
+      const snapshot = await db.collection('processGroups').doc(groupId).get();
 
       if (!snapshot.exists) {
         throw new NotFoundException('Grupo no encontrado');
       }
 
-      this.logger.debug(`Procesos para el grupo ${groupId}: ${JSON.stringify(snapshot.data())}`);
+      this.logger.debug(
+        `Procesos para el grupo ${groupId}: ${JSON.stringify(snapshot.data())}`,
+      );
 
       // obtener los plans asociados a ese grupo
       const plans = await db
@@ -314,12 +340,12 @@ export class ProcessGroupService {
       // Obtener todos los grupos para mapear id -> nombre
       const groupsSnapshot = await db.collection('processGroups').get();
       const groupMap = new Map<string, string>();
-      groupsSnapshot.forEach(doc => {
+      groupsSnapshot.forEach((doc) => {
         groupMap.set(doc.id, doc.data().name);
       });
 
       // Mapear cada plan con el nombre del grupo correspondiente
-      const plans = plansSnapshot.docs.map(planDoc => {
+      const plans = plansSnapshot.docs.map((planDoc) => {
         const planData = planDoc.data();
         const groupId = planData.groupId;
         const groupName = groupMap.get(groupId) || null;
