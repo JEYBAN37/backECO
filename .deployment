@@ -1,2 +1,2 @@
 [config]
-command = npm run start:prod
+command = npm run start:prod --prefix /home/site/wwwroot
